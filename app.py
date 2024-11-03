@@ -20,13 +20,20 @@ def clean_response(response_text):
     cleaned_text = response_text.replace('*', '').replace('##', '').strip()
     return cleaned_text
 
-# Function to speak the response using gTTS and automatically play
+# Function to speak the response using gTTS and auto-play audio
 def speak(text):
     tts = gTTS(text, lang='en')
     audio_file = BytesIO()
     tts.write_to_fp(audio_file)
     audio_file.seek(0)
-    st.session_state.audio_bytes = audio_file.read()  # Save audio data in session state
+
+    # Generate HTML for autoplay audio
+    audio_html = f"""
+    <audio autoplay style="display:none;">
+        <source src="data:audio/mp3;base64,{audio_file.getvalue().decode('utf-8')}" type="audio/mp3">
+    </audio>
+    """
+    st.markdown(audio_html, unsafe_allow_html=True)
 
 # Function to handle user input submission
 def handle_input():
@@ -44,7 +51,7 @@ def handle_input():
         # Clear input box
         st.session_state.user_input = ""
 
-        # Speak the response automatically if read out is activated
+        # Add a short delay to ensure the text is rendered before speaking
         if st.session_state.read_out:
             time.sleep(0.5)  # Adjust the duration as needed
             speak(response)
@@ -53,13 +60,11 @@ def handle_input():
 st.title("Real Time Conversational AI with Memory")
 st.write("Chat with the AI below!")
 
-# Initialize session states
+# Initialize conversation history and read out option in Streamlit session state
 if "conversation_history" not in st.session_state:
     st.session_state.conversation_history = []
 if "read_out" not in st.session_state:
     st.session_state.read_out = False
-if "audio_bytes" not in st.session_state:
-    st.session_state.audio_bytes = None
 
 # Display conversation history container
 conversation_placeholder = st.container()
@@ -79,18 +84,14 @@ with conversation_placeholder:
 # Checkbox to select if AI responses should be read aloud
 st.session_state.read_out = st.checkbox("Read AI responses aloud")
 
-# User input section at the bottom
+# User input section at the bottom, with enter key submitting the input
 input_placeholder = st.text_input(
     "Type your message:",
     value="",
     key="user_input",
     placeholder="Enter your message here...",
-    on_change=handle_input
+    on_change=handle_input  # Trigger handle_input function on pressing Enter
 )
-
-# Automatically play audio if it exists in session state
-if st.session_state.audio_bytes:
-    st.audio(st.session_state.audio_bytes, format="audio/mp3")
 
 # Button to clear conversation history
 if st.button("Clear Conversation"):

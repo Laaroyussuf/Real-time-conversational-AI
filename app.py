@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 from gtts import gTTS
 from io import BytesIO
-import time 
+import time
 
 # Configure your Gemini API
 API_KEY = st.secrets["general"]["api_key"]

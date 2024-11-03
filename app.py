@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
-import pyttsx3
+from gtts import gTTS
+from io import BytesIO
 import time
 
 # Configure your Gemini API
@@ -11,76 +12,78 @@ genai.configure(api_key=API_KEY)
 def get_gemini_response(conversation_history):
     model = genai.GenerativeModel("gemini-1.5-flash")
     context = "\n".join(conversation_history)
-    
-    try:
-        response = model.generate_content(context)
-        # Ensure response exists and has a 'text' attribute
-        if hasattr(response, 'text'):
-            return clean_response(response.text)
-        else:
-            st.error("AI response is empty or unexpected format.")
-            return "I'm sorry, I couldn't generate a response at this time."
-    except Exception as e:
-        st.error(f"Error generating AI response: {e}")
-        return "An error occurred while generating the response."
+    response = model.generate_content(context)
+    return clean_response(response.text)
 
 # Clean Response function
 def clean_response(response_text):
-    return response_text.replace('*', '').replace('##', '').strip()
+    cleaned_text = response_text.replace('*', '').replace('##', '').strip()
+    return cleaned_text
 
-# Function to speak the response if 'read_out' is selected
+# Function to speak the response using gTTS
 def speak(text):
-    engine = pyttsx3.init()
-    engine.say(text)
-    engine.runAndWait()
+    tts = gTTS(text, lang='en')
+    audio_file = BytesIO()
+    tts.write_to_fp(audio_file)
+    audio_file.seek(0)
+    st.audio(audio_file, format="audio/mp3")
 
-# Handle user input submission
+# Function to handle user input submission
 def handle_input():
     user_input = st.session_state.user_input
     if user_input:
+        # Append user input to conversation history with emoji
         st.session_state.conversation_history.append(f"🙎‍♂️ You: {user_input}")
+
+        # Generate AI response
         response = get_gemini_response(st.session_state.conversation_history)
+
+        # Append AI response to conversation history with emoji
         st.session_state.conversation_history.append(f"🤖 AI: {response}")
+
+        # Clear input box
         st.session_state.user_input = ""
 
-        # Automatically speak response if 'read_out' is enabled
+        # Add a short delay to ensure the text is rendered before speaking
         if st.session_state.read_out:
-            time.sleep(0.5)
+            time.sleep(0.5)  # Adjust the duration as needed
             speak(response)
 
 # Streamlit UI setup
-st.title("Real-Time Conversational AI with Memory")
+st.title("Real Time Conversational AI with Memory")
 st.write("Chat with the AI below!")
 
-# Initialize conversation history and read out option
+# Initialize conversation history and read out option in Streamlit session state
 if "conversation_history" not in st.session_state:
     st.session_state.conversation_history = []
 if "read_out" not in st.session_state:
     st.session_state.read_out = False
 
-# Conversation history display
+# Display conversation history container
 conversation_placeholder = st.container()
 with conversation_placeholder:
     for message in st.session_state.conversation_history:
-        alignment = "right" if message.startswith("🙎‍♂️ You:") else "left"
-        color = "#0056b3" if alignment == "right" else "#007bff"
-        st.markdown(
-            f'<div style="text-align: {alignment}; background-color: {color}; color: white; '
-            f'border-radius: 10px; padding: 10px; margin: 5px; max-width: 70%; display: inline-block;'
-            ' box-shadow: 0 0 10px rgba(0,0,0,0.3);">{message}</div>',
-            unsafe_allow_html=True
-        )
+        if message.startswith("🙎‍♂️ You:"):
+            st.markdown(
+                f'<div style="text-align: right; background-color: #0056b3; color: white; border-radius: 10px; padding: 10px; margin: 5px; max-width: 70%; display: inline-block; box-shadow: 0 0 10px rgba(0,0,0,0.3); margin-left: auto;">{message}</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f'<div style="text-align: left; background-color: #007bff; color: white; border-radius: 10px; padding: 10px; margin: 5px; max-width: 70%; display: inline-block; box-shadow: 0 0 10px rgba(0,0,0,0.3);">{message}</div>',
+                unsafe_allow_html=True
+            )
 
-# Checkbox for read aloud option
+# Checkbox to select if AI responses should be read aloud
 st.session_state.read_out = st.checkbox("Read AI responses aloud")
 
-# Input section with Enter key submission
-st.text_input(
+# User input section at the bottom, with enter key submitting the input
+input_placeholder = st.text_input(
     "Type your message:",
     value="",
     key="user_input",
     placeholder="Enter your message here...",
-    on_change=handle_input
+    on_change=handle_input  # Trigger handle_input function on pressing Enter
 )
 
 # Button to clear conversation history

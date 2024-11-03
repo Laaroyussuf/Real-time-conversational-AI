@@ -1,7 +1,8 @@
 import streamlit as st
 import google.generativeai as genai
-import pyttsx3
-import time  # Import the time module
+from gtts import gTTS
+from io import BytesIO
+import time 
 
 # Configure your Gemini API
 API_KEY = st.secrets["general"]["api_key"]
@@ -19,11 +20,13 @@ def clean_response(response_text):
     cleaned_text = response_text.replace('*', '').replace('##', '').strip()
     return cleaned_text
 
-# Function to speak the response
+# Function to speak the response using gTTS
 def speak(text):
-    engine = pyttsx3.init()
-    engine.say(text)
-    engine.runAndWait()
+    tts = gTTS(text, lang='en')
+    audio_file = BytesIO()
+    tts.write_to_fp(audio_file)
+    audio_file.seek(0)
+    st.audio(audio_file, format="audio/mp3")
 
 # Function to handle user input submission
 def handle_input():

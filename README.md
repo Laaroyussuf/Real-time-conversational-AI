@@ -42,9 +42,28 @@ To run this application locally, follow these steps:
 Run the application using Streamlit:
 ```bash
 streamlit run app.py
-
+```
 
 ## Architecture 
 - Google Generative AI (Gemini) is used for generating natural language responses based on the conversation context.
 - D-ID API is utilized to generate avatar video responses with facial expressions, making the interaction more lifelike.
 - The real-time communication is facilitated by Streamlit, which updates the interface dynamically as the user interacts with the AI.
+
+## Deployment
+This solution is designed to be deployed as a web application, utilizing Streamlit for the front-end interface. It can be deployed on any cloud platform that supports Python applications, such as AWS, Azure, or Google Cloud.
+
+## Challenges & Solutions
+1. **Latency in Video Generation**
+The video response from the D-ID API can take time to generate, especially if there is heavy server load. The solution involves a retry mechanism that checks the video status until it's ready.
+
+2. **Avatar Facial Expressions & Synchronization**
+Ensuring that the facial expressions align with the conversation requires integrating real-time status checks and configuring appropriate expression mappings based on context.
+
+## Future Improvements
+- **Voice Input:** Adding the ability for users to interact with Vastlearn-AI using voice input would enhance accessibility and provide a richer user experience.
+
+- **Latency:** Improving latency in video generation is an ongoing improvement area. Faster video generation would provide a smoother, more responsive user experience.
+
+- **Multiple User Support:** Implementing multi-user support would make the system scalable, allowing more users to interact with the AI simultaneously.
+
+- **Avatar Gestures:** Gesture integration is actively being worked on to further enhance the avatar's expressiveness and interactivity in response to conversations.
